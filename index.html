@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Happy Birthday</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: black;
+        overflow: hidden;
+        <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">;
+      }
+
+      canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: block;
+      }
+
+      #rain {
+        z-index: 0;
+      }
+      #mosaic {
+        z-index: 3;
+      }
+      #stars {
+        z-index: 1;
+        display: none;
+      }
+
+      /* hiệu ứng zoom chữ */
+      .fadeZoom {
+        animation: fadeZoom 1.8s ease forwards;
+      }
+      @keyframes fadeZoom {
+        0% {
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        50% {
+          transform: scale(1.1);
+          opacity: 1;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="rain"></canvas>
+    <canvas id="mosaic"></canvas>
+    <canvas id="stars"></canvas>
+
+    <script>
+      const canvasRain = document.getElementById("rain");
+      const ctxRain = canvasRain.getContext("2d");
+      const canvasM = document.getElementById("mosaic");
+      const ctxM = canvasM.getContext("2d");
+      const canvasStars = document.getElementById("stars");
+      const ctxStars = canvasStars.getContext("2d");
+
+      function resizeAll() {
+        [canvasRain, canvasM, canvasStars].forEach((c) => {
+          c.width = window.innerWidth;
+          c.height = window.innerHeight;
+        });
+      }
+      resizeAll();
+
+      // ===== Rain =====
+      const letters = "HAPPYBIRTHDAYLOVE".split("");
+      let fontSize = 16,
+        columns,
+        drops;
+      function initRain() {
+        fontSize = Math.max(14, Math.floor(window.innerWidth / 80));
+        columns = Math.floor(canvasRain.width / fontSize);
+        drops = [];
+        for (let i = 0; i < columns; i++) drops[i] = Math.random() * -100;
+      }
+      initRain();
+
+      function drawRain() {
+        ctxRain.fillStyle = "rgba(0, 0, 0, 0.1)";
+        ctxRain.fillRect(0, 0, canvasRain.width, canvasRain.height);
+
+        ctxRain.fillStyle = "#ff4db8";
+        ctxRain.font = fontSize + "px monospace";
+        for (let i = 0; i < drops.length; i++) {
+          const text = letters[Math.floor(Math.random() * letters.length)];
+          ctxRain.fillText(text, i * fontSize, drops[i] * fontSize);
+          if (drops[i] * fontSize > canvasRain.height && Math.random() > 0.95)
+            drops[i] = 0;
+          drops[i]++;
+        }
+      }
+      let rainInterval = setInterval(drawRain, 50);
+
+      // ===== Mosaic Text =====
+      function drawMosaicText(text) {
+        const w = canvasM.width,
+          h = canvasM.height;
+        const tmp = document.createElement("canvas");
+        tmp.width = w;
+        tmp.height = h;
+        const tctx = tmp.getContext("2d");
+
+        const bigFontSize = Math.floor(Math.min(w, h) * 0.25);
+        tctx.font = `bold ${bigFontSize}px monospace`;
+        tctx.fillStyle = "white";
+        tctx.textAlign = "center";
+        tctx.textBaseline = "middle";
+        tctx.fillText(text, w / 2, h / 2);
+
+        const img = tctx.getImageData(0, 0, w, h).data;
+        const step = Math.max(6, Math.floor(Math.min(w, h) / 160));
+
+        ctxM.clearRect(0, 0, w, h);
+        ctxM.font = `${step}px monospace`;
+        ctxM.textAlign = "center";
+        ctxM.textBaseline = "middle";
+
+        for (let y = 0; y < h; y += step) {
+          for (let x = 0; x < w; x += step) {
+            const idx = (y * w + x) * 4;
+            if (img[idx + 3] > 128) {
+              const ch = letters[Math.floor(Math.random() * letters.length)];
+              const neonColors = ["#ff66ff", "#ff99ff", "#ffffff", "#ffe6ff"];
+              ctxM.fillStyle =
+                neonColors[Math.floor(Math.random() * neonColors.length)];
+              ctxM.fillText(ch, x, y);
+            }
+          }
+        }
+        // thêm hiệu ứng zoom
+        canvasM.classList.remove("fadeZoom");
+        void canvasM.offsetWidth; // reset animation
+        canvasM.classList.add("fadeZoom");
+      }
+
+      // ===== Heart =====
+      function drawHeart(alpha = 1) {
+        const w = canvasM.width,
+          h = canvasM.height;
+        const tmp = document.createElement("canvas");
+        tmp.width = w;
+        tmp.height = h;
+        const tctx = tmp.getContext("2d");
+
+        tctx.fillStyle = "white";
+        const scale = Math.min(w, h) / 20;
+        for (let t = 0; t < Math.PI * 2; t += 0.01) {
+          const x = 16 * Math.pow(Math.sin(t), 3);
+          const y = -(
+            13 * Math.cos(t) -
+            5 * Math.cos(2 * t) -
+            2 * Math.cos(3 * t) -
+            Math.cos(4 * t)
+          );
+          tctx.fillRect(w / 2 + x * scale, h / 2 + y * scale, 2, 2);
+        }
+
+        const img = tctx.getImageData(0, 0, w, h).data;
+        const step = Math.max(6, Math.floor(Math.min(w, h) / 160));
+
+        ctxM.clearRect(0, 0, w, h);
+        ctxM.globalAlpha = alpha;
+        ctxM.font = `${step}px monospace`;
+        ctxM.textAlign = "center";
+        ctxM.textBaseline = "middle";
+
+        for (let y = 0; y < h; y += step) {
+          for (let x = 0; x < w; x += step) {
+            const idx = (y * w + x) * 4;
+            if (img[idx + 3] > 128) {
+              const ch = letters[Math.floor(Math.random() * letters.length)];
+              ctxM.fillStyle = Math.random() < 0.7 ? "#ff4db8" : "#ff9bd6";
+              ctxM.fillText(ch, x, y);
+            }
+          }
+        }
+        ctxM.globalAlpha = 1;
+      }
+
+      // ===== Messages =====
+      const messages = [
+        "3",
+        "2",
+        "1",
+        "HAPPY",
+        "HÀ TÂY",
+        "Chúc cậu",
+        "Hạnh phúc",
+        "Bình an",
+        "Khỏe mạnh",
+        "May mắn",
+        "Thành công",
+        "Mãi yêu",
+        "❤",
+      ];
+      let index = 0;
+      function showNext() {
+        if (index < messages.length - 1) {
+          drawMosaicText(messages[index]);
+          index++;
+          setTimeout(showNext, 2000);
+        } else {
+          let alpha = 1;
+          function fadeHeart() {
+            drawHeart(alpha);
+            alpha -= 0.02;
+            if (alpha > 0) requestAnimationFrame(fadeHeart);
+            else {
+              clearInterval(rainInterval);
+              canvasRain.style.display = "none";
+              document.getElementById("stars").style.display = "block";
+              drawStars();
+            }
+          }
+          fadeHeart();
+        }
+      }
+      setTimeout(showNext, 3000);
+
+      // ===== Stars =====
+      let stars = [];
+      function initStars() {
+        stars = [];
+        for (let i = 0; i < 120; i++) {
+          stars.push({
+            x: Math.random() * canvasStars.width,
+            y: Math.random() * canvasStars.height,
+            radius: Math.random() * 1.5,
+            alpha: Math.random(),
+            speed: 0.02 + Math.random() * 0.02,
+          });
+        }
+      }
+      function drawStars() {
+        initStars();
+        function animate() {
+          ctxStars.clearRect(0, 0, canvasStars.width, canvasStars.height);
+          for (let star of stars) {
+            ctxStars.beginPath();
+            ctxStars.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+            ctxStars.fillStyle = `rgba(255,255,255,${star.alpha})`;
+            ctxStars.fill();
+            star.alpha += star.speed;
+            if (star.alpha <= 0 || star.alpha >= 1) star.speed = -star.speed;
+          }
+          requestAnimationFrame(animate);
+        }
+        animate();
+      }
+
+      window.addEventListener("resize", () => {
+        resizeAll();
+        initRain();
+      });
+    </script>
+  </body>
+</html>
